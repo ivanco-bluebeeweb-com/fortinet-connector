@@ -19,8 +19,8 @@ from schemas import (
 
 def _status_badge(status: str) -> ui.UINode:
     s = (status or "").lower()
-    variant = "success" if s in ("enable", "online", "up", "connected") else ("error" if s in ("disable", "offline", "down") else "default")
-    return ui.Badge(text=status or "unknown", variant=variant)
+    color = "success" if s in ("enable", "online", "up", "connected") else ("error" if s in ("disable", "offline", "down") else "default")
+    return ui.Badge(label=status or "unknown", color=color)
 
 
 @ext.panel("fortinet_center", slot="center")

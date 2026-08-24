@@ -113,16 +113,20 @@ async def fortinet_sidebar_panel(ctx) -> ui.UINode:
         ])
     else:
         rows = [ui.Text(f"{c.title} ({c.kind})", variant="body") for c in items]
-        body = ui.Stack(direction="v", gap=3, align="stretch", children=[
-            ui.Text("Connections", variant="heading"),
-            *rows,
-            ui.Divider(),
-            _fortigate_connect_form(),
-            ui.Divider(),
-            _fortimanager_connect_form(),
-            ui.Divider(),
-            _fortisase_connect_form(),
-        ])
+        kinds = {c.kind for c in items}
+        nav_children = [ui.Text("Connections", variant="heading"), *rows, ui.Divider()]
+        if "fortigate" in kinds:
+            nav_children.append(ui.Button("FortiGate", variant="secondary", size="sm", full_width=True,
+                                           icon="Shield", on_click=ui.Call("__panel__fortinet_fortigate_overview")))
+        if "fortimanager" in kinds:
+            nav_children.append(ui.Button("FortiManager", variant="secondary", size="sm", full_width=True,
+                                           icon="Server", on_click=ui.Call("__panel__fortinet_fortimanager_overview")))
+        if "fortisase" in kinds:
+            nav_children.append(ui.Button("FortiSASE", variant="secondary", size="sm", full_width=True,
+                                           icon="Cloud", on_click=ui.Call("__panel__fortinet_fortisase_overview")))
+        nav_children.append(ui.Divider())
+        nav_children.extend([_fortigate_connect_form(), ui.Divider(), _fortimanager_connect_form(), ui.Divider(), _fortisase_connect_form()])
+        body = ui.Stack(direction="v", gap=3, align="stretch", children=nav_children)
     return ui.Stack(direction="v", gap=4, align="stretch", children=[
         body,
         ui.Divider(),

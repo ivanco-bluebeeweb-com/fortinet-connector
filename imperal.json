@@ -4324,6 +4324,42 @@
       "center_overlay": false
     },
     {
+      "panel_id": "fortinet_center",
+      "slot": "center",
+      "title": "",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": false
+    },
+    {
+      "panel_id": "fortinet_fortigate_overview",
+      "slot": "center",
+      "title": "FortiGate",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": true
+    },
+    {
+      "panel_id": "fortinet_fortimanager_overview",
+      "slot": "center",
+      "title": "FortiManager",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": true
+    },
+    {
+      "panel_id": "fortinet_fortisase_overview",
+      "slot": "center",
+      "title": "FortiSASE",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": true
+    },
+    {
       "panel_id": "fortinet_settings",
       "slot": "center",
       "title": "",
