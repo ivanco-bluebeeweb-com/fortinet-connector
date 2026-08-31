@@ -510,6 +510,7 @@ class BulkFirewallPolicyActionParams(_FortiGateScoped):
 
 
 class BulkActionOutcome(sdl.Entity):
+    title: str = ""
     id: str = ""
     ok: bool = False
     error: str = ""
@@ -526,6 +527,7 @@ class AuditFortinetEstateParams(BaseModel):
 
 
 class AuditFinding(sdl.Entity):
+    title: str = ""
     id: str = ""
     severity: str = ""  # "info" | "warning" | "critical"
     message: str = ""
