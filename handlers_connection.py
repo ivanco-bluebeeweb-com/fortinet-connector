@@ -52,24 +52,24 @@ async def _resolve_connection(ctx, kind: str, connection_id: str = "") -> dict |
 async def _authed_fortigate(ctx, connection_id: str = "") -> dict | ActionResult:
     conn = await _resolve_connection(ctx, "fortigate", connection_id)
     if conn is None:
-        return ActionResult(success=False, error=fc._MESSAGES[fc.ACCOUNT_MISSING])
+        return ActionResult.error(fc._MESSAGES[fc.ACCOUNT_MISSING])
     return conn
 
 
 async def _authed_fortisase(ctx, connection_id: str = "") -> dict | ActionResult:
     conn = await _resolve_connection(ctx, "fortisase", connection_id)
     if conn is None:
-        return ActionResult(success=False, error=fc._MESSAGES[fc.ACCOUNT_MISSING])
+        return ActionResult.error(fc._MESSAGES[fc.ACCOUNT_MISSING])
     return conn
 
 
 async def _authed_fortimanager(ctx, connection_id: str = "") -> tuple[dict, str] | ActionResult:
     conn = await _resolve_connection(ctx, "fortimanager", connection_id)
     if conn is None:
-        return ActionResult(success=False, error=fc._MESSAGES[fc.ACCOUNT_MISSING])
+        return ActionResult.error(fc._MESSAGES[fc.ACCOUNT_MISSING])
     ok, session = await fc.fortimanager_login(ctx, conn)
     if not ok:
-        return ActionResult(success=False, error=session.message())
+        return ActionResult.error(session.message())
     return conn, session
 
 
@@ -99,7 +99,7 @@ async def connect_fortigate(ctx, params: ConnectFortiGateParams) -> ActionResult
     conn = {"host": params.host.rstrip("/"), "api_token": params.api_token}
     ok, data = await fc.fortigate_request(ctx, conn, "GET", "/monitor/system/status")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     connections = await _load_connections(ctx)
     entry = {
         "id": str(uuid.uuid4()), "kind": "fortigate",
@@ -108,7 +108,7 @@ async def connect_fortigate(ctx, params: ConnectFortiGateParams) -> ActionResult
     }
     connections.append(entry)
     await _save_connections(ctx, connections)
-    return ActionResult(success=True, data=_connection_to_entity(entry))
+    return ActionResult.success(_connection_to_entity(entry), summary="Fortigate connected.")
 
 
 @chat.function(
@@ -120,7 +120,7 @@ async def connect_fortimanager(ctx, params: ConnectFortiManagerParams) -> Action
     conn = {"host": params.host.rstrip("/"), "username": params.username, "password": params.password, "adom": params.adom or "root"}
     ok, session = await fc.fortimanager_login(ctx, conn)
     if not ok:
-        return ActionResult(success=False, error=session.message())
+        return ActionResult.error(session.message())
     connections = await _load_connections(ctx)
     entry = {
         "id": str(uuid.uuid4()), "kind": "fortimanager",
@@ -129,7 +129,7 @@ async def connect_fortimanager(ctx, params: ConnectFortiManagerParams) -> Action
     }
     connections.append(entry)
     await _save_connections(ctx, connections)
-    return ActionResult(success=True, data=_connection_to_entity(entry))
+    return ActionResult.success(_connection_to_entity(entry), summary="Fortimanager connected.")
 
 
 @chat.function(
@@ -141,7 +141,7 @@ async def connect_fortisase(ctx, params: ConnectFortiSaseParams) -> ActionResult
     conn = {"api_token": params.api_token, "region": params.region}
     ok, data = await fc.fortisase_request(ctx, conn, "GET", "/endpoints")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     connections = await _load_connections(ctx)
     entry = {
         "id": str(uuid.uuid4()), "kind": "fortisase",
@@ -150,7 +150,7 @@ async def connect_fortisase(ctx, params: ConnectFortiSaseParams) -> ActionResult
     }
     connections.append(entry)
     await _save_connections(ctx, connections)
-    return ActionResult(success=True, data=_connection_to_entity(entry))
+    return ActionResult.success(_connection_to_entity(entry), summary="Fortisase connected.")
 
 
 @chat.function(
@@ -162,9 +162,9 @@ async def disconnect_fortinet(ctx, params: DisconnectParams) -> ActionResult:
     connections = await _load_connections(ctx)
     remaining = [c for c in connections if c.get("id") != params.connection_id]
     if len(remaining) == len(connections):
-        return ActionResult(success=False, error="No such connection.")
+        return ActionResult.error("No such connection.")
     await _save_connections(ctx, remaining)
-    return ActionResult(success=True, data=DeleteResult(id=params.connection_id, deleted=True))
+    return ActionResult.success(DeleteResult(id=params.connection_id, deleted=True), summary="Fortinet disconnected.")
 
 
 @chat.function(
@@ -176,4 +176,4 @@ async def disconnect_fortinet(ctx, params: DisconnectParams) -> ActionResult:
 async def list_connections(ctx, params: NoParams) -> ActionResult:
     connections = await _load_connections(ctx)
     items = [_connection_to_entity(c) for c in connections]
-    return ActionResult(success=True, data=ProviderConnectionList(title=f"{len(items)} connection(s)", items=items))
+    return ActionResult.success(ProviderConnectionList(title=f"{len(items)} connection(s)", items=items), summary="Connections listed.")

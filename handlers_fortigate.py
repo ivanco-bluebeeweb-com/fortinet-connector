@@ -38,7 +38,7 @@ async def list_firewall_policies(ctx, params: ListFirewallPoliciesParams) -> Act
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "GET", "/cmdb/firewall/policy")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [
         FirewallPolicy(
             id=str(p.get("policyid", "")), title=p.get("name", ""), policyid=p.get("policyid", 0),
@@ -47,7 +47,7 @@ async def list_firewall_policies(ctx, params: ListFirewallPoliciesParams) -> Act
         )
         for p in data.get("results", [])
     ]
-    return ActionResult(success=True, data=FirewallPolicyList(title=f"{len(items)} polic{'y' if len(items)==1 else 'ies'}", items=items))
+    return ActionResult.success(FirewallPolicyList(title=f"{len(items)} polic{'y' if len(items)==1 else 'ies'}", items=items), summary="Firewall policies listed.")
 
 
 @chat.function(
@@ -62,13 +62,13 @@ async def get_firewall_policy(ctx, params: GetFirewallPolicyParams) -> ActionRes
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "GET", f"/cmdb/firewall/policy/{params.policyid}")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     p = (data.get("results") or [{}])[0]
-    return ActionResult(success=True, data=FirewallPolicy(
+    return ActionResult.success(FirewallPolicy(
         id=str(p.get("policyid", "")), title=p.get("name", ""), policyid=p.get("policyid", 0),
         action=p.get("action", ""), srcintf=",".join(i.get("name", "") for i in p.get("srcintf", [])),
         dstintf=",".join(i.get("name", "") for i in p.get("dstintf", [])), status=p.get("status", ""),
-    ))
+    ), summary="Firewall policy retrieved.")
 
 
 @chat.function(
@@ -87,8 +87,8 @@ async def create_firewall_policy(ctx, params: CreateFirewallPolicyParams) -> Act
     }
     ok, data = await fc.fortigate_request(ctx, conn, "POST", "/cmdb/firewall/policy", json_body=body)
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=FirewallPolicy(id=str(data.get("mkey", "")), title=params.name, action=params.action))
+        return ActionResult.error(data.message())
+    return ActionResult.success(FirewallPolicy(id=str(data.get("mkey", "")), title=params.name, action=params.action), summary="Firewall policy created.")
 
 
 @chat.function(
@@ -107,8 +107,8 @@ async def update_firewall_policy(ctx, params: UpdateFirewallPolicyParams) -> Act
         body["status"] = params.status
     ok, data = await fc.fortigate_request(ctx, conn, "PUT", f"/cmdb/firewall/policy/{params.policyid}", json_body=body)
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=FirewallPolicy(id=params.policyid, title="Updated"))
+        return ActionResult.error(data.message())
+    return ActionResult.success(FirewallPolicy(id=params.policyid, title="Updated"), summary="Firewall policy updated.")
 
 
 @chat.function(
@@ -122,8 +122,8 @@ async def delete_firewall_policy(ctx, params: DeleteFirewallPolicyParams) -> Act
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "DELETE", f"/cmdb/firewall/policy/{params.policyid}")
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=DeleteResult(id=params.policyid, deleted=True))
+        return ActionResult.error(data.message())
+    return ActionResult.success(DeleteResult(id=params.policyid, deleted=True), summary="Firewall policy deleted.")
 
 
 @chat.function(
@@ -142,8 +142,8 @@ async def reorder_firewall_policy(ctx, params: ReorderFirewallPolicyParams) -> A
         q = {"action": "move", "after": params.after_policyid}
     ok, data = await fc.fortigate_request(ctx, conn, "PUT", f"/cmdb/firewall/policy/{params.policyid}", params=q)
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=DeleteResult(id=params.policyid, deleted=False, title="Reordered"))
+        return ActionResult.error(data.message())
+    return ActionResult.success(DeleteResult(id=params.policyid, deleted=False, title="Reordered"), summary="Reorder firewall policy done.")
 
 
 @chat.function(
@@ -158,9 +158,9 @@ async def list_address_objects(ctx, params: ListAddressObjectsParams) -> ActionR
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "GET", "/cmdb/firewall/address")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [AddressObject(id=a.get("name", ""), title=a.get("name", ""), subnet=a.get("subnet", ""), type=a.get("type", "")) for a in data.get("results", [])]
-    return ActionResult(success=True, data=AddressObjectList(title=f"{len(items)} address object(s)", items=items))
+    return ActionResult.success(AddressObjectList(title=f"{len(items)} address object(s)", items=items), summary="Address objects listed.")
 
 
 @chat.function(
@@ -174,8 +174,8 @@ async def create_address_object(ctx, params: CreateAddressObjectParams) -> Actio
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "POST", "/cmdb/firewall/address", json_body={"name": params.name, "subnet": params.subnet})
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=AddressObject(id=params.name, title=params.name, subnet=params.subnet))
+        return ActionResult.error(data.message())
+    return ActionResult.success(AddressObject(id=params.name, title=params.name, subnet=params.subnet), summary="Address object created.")
 
 
 @chat.function(
@@ -190,8 +190,8 @@ async def update_address_object(ctx, params: UpdateAddressObjectParams) -> Actio
     body = {"subnet": params.subnet} if params.subnet else {}
     ok, data = await fc.fortigate_request(ctx, conn, "PUT", f"/cmdb/firewall/address/{params.name}", json_body=body)
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=AddressObject(id=params.name, title=params.name))
+        return ActionResult.error(data.message())
+    return ActionResult.success(AddressObject(id=params.name, title=params.name), summary="Address object updated.")
 
 
 @chat.function(
@@ -205,8 +205,8 @@ async def delete_address_object(ctx, params: DeleteAddressObjectParams) -> Actio
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "DELETE", f"/cmdb/firewall/address/{params.name}")
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=DeleteResult(id=params.name, deleted=True))
+        return ActionResult.error(data.message())
+    return ActionResult.success(DeleteResult(id=params.name, deleted=True), summary="Address object deleted.")
 
 
 @chat.function(
@@ -221,9 +221,9 @@ async def list_address_groups(ctx, params: ListAddressGroupsParams) -> ActionRes
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "GET", "/cmdb/firewall/addrgrp")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [AddressGroup(id=g.get("name", ""), title=g.get("name", ""), member_count=len(g.get("member", []))) for g in data.get("results", [])]
-    return ActionResult(success=True, data=AddressGroupList(title=f"{len(items)} address group(s)", items=items))
+    return ActionResult.success(AddressGroupList(title=f"{len(items)} address group(s)", items=items), summary="Address groups listed.")
 
 
 @chat.function(
@@ -238,9 +238,9 @@ async def list_service_objects(ctx, params: ListServiceObjectsParams) -> ActionR
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "GET", "/cmdb/firewall.service/custom")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [ServiceObject(id=s.get("name", ""), title=s.get("name", ""), protocol=s.get("protocol", ""), port_range=s.get("tcp-portrange", "") or s.get("udp-portrange", "")) for s in data.get("results", [])]
-    return ActionResult(success=True, data=ServiceObjectList(title=f"{len(items)} service object(s)", items=items))
+    return ActionResult.success(ServiceObjectList(title=f"{len(items)} service object(s)", items=items), summary="Service objects listed.")
 
 
 @chat.function(
@@ -255,8 +255,8 @@ async def create_service_object(ctx, params: CreateServiceObjectParams) -> Actio
     body = {"name": params.name, "protocol": params.protocol, "tcp-portrange": params.port_range}
     ok, data = await fc.fortigate_request(ctx, conn, "POST", "/cmdb/firewall.service/custom", json_body=body)
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=ServiceObject(id=params.name, title=params.name, port_range=params.port_range))
+        return ActionResult.error(data.message())
+    return ActionResult.success(ServiceObject(id=params.name, title=params.name, port_range=params.port_range), summary="Service object created.")
 
 
 @chat.function(
@@ -271,8 +271,8 @@ async def update_service_object(ctx, params: UpdateServiceObjectParams) -> Actio
     body = {"tcp-portrange": params.port_range} if params.port_range else {}
     ok, data = await fc.fortigate_request(ctx, conn, "PUT", f"/cmdb/firewall.service/custom/{params.name}", json_body=body)
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=ServiceObject(id=params.name, title=params.name))
+        return ActionResult.error(data.message())
+    return ActionResult.success(ServiceObject(id=params.name, title=params.name), summary="Service object updated.")
 
 
 @chat.function(
@@ -286,8 +286,8 @@ async def delete_service_object(ctx, params: DeleteServiceObjectParams) -> Actio
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "DELETE", f"/cmdb/firewall.service/custom/{params.name}")
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=DeleteResult(id=params.name, deleted=True))
+        return ActionResult.error(data.message())
+    return ActionResult.success(DeleteResult(id=params.name, deleted=True), summary="Service object deleted.")
 
 
 @chat.function(
@@ -302,9 +302,9 @@ async def list_interfaces(ctx, params: ListInterfacesParams) -> ActionResult:
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "GET", "/cmdb/system/interface")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [Interface(id=i.get("name", ""), title=i.get("name", ""), ip=i.get("ip", ""), status=i.get("status", ""), role=i.get("role", "")) for i in data.get("results", [])]
-    return ActionResult(success=True, data=InterfaceList(title=f"{len(items)} interface(s)", items=items))
+    return ActionResult.success(InterfaceList(title=f"{len(items)} interface(s)", items=items), summary="Interfaces listed.")
 
 
 @chat.function(
@@ -319,12 +319,12 @@ async def get_system_status(ctx, params: GetSystemStatusParams) -> ActionResult:
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "GET", "/monitor/system/status")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     r = data.get("results", data)
-    return ActionResult(success=True, data=SystemStatus(
+    return ActionResult.success(SystemStatus(
         id="system_status", title=r.get("hostname", "FortiGate"), version=r.get("version", ""),
         serial=r.get("serial", ""), hostname=r.get("hostname", ""), uptime_seconds=r.get("uptime", 0),
-    ))
+    ), summary="System status retrieved.")
 
 
 @chat.function(
@@ -339,6 +339,6 @@ async def list_vpn_tunnels(ctx, params: ListVpnTunnelsParams) -> ActionResult:
         return conn
     ok, data = await fc.fortigate_request(ctx, conn, "GET", "/monitor/vpn/ipsec")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [VpnTunnel(id=t.get("name", ""), title=t.get("name", ""), type="ipsec", status=t.get("status", "")) for t in data.get("results", [])]
-    return ActionResult(success=True, data=VpnTunnelList(title=f"{len(items)} VPN tunnel(s)", items=items))
+    return ActionResult.success(VpnTunnelList(title=f"{len(items)} VPN tunnel(s)", items=items), summary="Vpn tunnels listed.")

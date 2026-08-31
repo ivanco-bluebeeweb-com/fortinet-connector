@@ -34,9 +34,9 @@ async def list_adoms(ctx, params: ListAdomsParams) -> ActionResult:
     conn, session = auth
     ok, data = await fc.fortimanager_request(ctx, conn, session, "get", "/dvmdb/adom")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [Adom(id=a.get("name", ""), title=a.get("name", ""), os_ver=str(a.get("os_ver", ""))) for a in data]
-    return ActionResult(success=True, data=AdomList(title=f"{len(items)} ADOM(s)", items=items))
+    return ActionResult.success(AdomList(title=f"{len(items)} ADOM(s)", items=items), summary="Adoms listed.")
 
 
 @chat.function(
@@ -53,7 +53,7 @@ async def list_managed_devices(ctx, params: ListManagedDevicesParams) -> ActionR
     adom = conn.get("adom", "root")
     ok, data = await fc.fortimanager_request(ctx, conn, session, "get", f"/dvmdb/adom/{adom}/device")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [
         ManagedDevice(
             id=d.get("name", ""), title=d.get("name", ""), ip=d.get("ip", ""),
@@ -62,7 +62,7 @@ async def list_managed_devices(ctx, params: ListManagedDevicesParams) -> ActionR
         )
         for d in data
     ]
-    return ActionResult(success=True, data=ManagedDeviceList(title=f"{len(items)} managed device(s)", items=items))
+    return ActionResult.success(ManagedDeviceList(title=f"{len(items)} managed device(s)", items=items), summary="Managed devices listed.")
 
 
 @chat.function(
@@ -79,13 +79,13 @@ async def get_managed_device(ctx, params: GetManagedDeviceParams) -> ActionResul
     adom = conn.get("adom", "root")
     ok, data = await fc.fortimanager_request(ctx, conn, session, "get", f"/dvmdb/adom/{adom}/device/{params.device_name}")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     d = data[0] if isinstance(data, list) else data
-    return ActionResult(success=True, data=ManagedDevice(
+    return ActionResult.success(ManagedDevice(
         id=d.get("name", ""), title=d.get("name", ""), ip=d.get("ip", ""),
         platform=d.get("platform_str", ""), status="online" if d.get("conn_status") == 1 else "offline",
         os_ver=str(d.get("os_ver", "")),
-    ))
+    ), summary="Managed device retrieved.")
 
 
 @chat.function(
@@ -102,9 +102,9 @@ async def list_policy_packages(ctx, params: ListPolicyPackagesParams) -> ActionR
     adom = conn.get("adom", "root")
     ok, data = await fc.fortimanager_request(ctx, conn, session, "get", f"/pm/pkg/adom/{adom}")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [PolicyPackage(id=p.get("name", ""), title=p.get("name", ""), scope_member_count=len(p.get("scope member", []))) for p in data]
-    return ActionResult(success=True, data=PolicyPackageList(title=f"{len(items)} policy package(s)", items=items))
+    return ActionResult.success(PolicyPackageList(title=f"{len(items)} policy package(s)", items=items), summary="Policy packages listed.")
 
 
 @chat.function(
@@ -121,9 +121,9 @@ async def list_fmg_firewall_policies(ctx, params: ListFmgFirewallPoliciesParams)
     adom = conn.get("adom", "root")
     ok, data = await fc.fortimanager_request(ctx, conn, session, "get", f"/pm/config/adom/{adom}/pkg/{params.package}/firewall/policy")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [FmgFirewallPolicy(id=str(p.get("policyid", "")), title=p.get("name", ""), policyid=p.get("policyid", 0), action=p.get("action", ""), status=p.get("status", "")) for p in data]
-    return ActionResult(success=True, data=FmgFirewallPolicyList(title=f"{len(items)} polic{'y' if len(items)==1 else 'ies'}", items=items))
+    return ActionResult.success(FmgFirewallPolicyList(title=f"{len(items)} polic{'y' if len(items)==1 else 'ies'}", items=items), summary="Fmg firewall policies listed.")
 
 
 @chat.function(
@@ -139,9 +139,9 @@ async def list_fmg_address_objects(ctx, params: ListFmgAddressObjectsParams) -> 
     conn, session = auth
     ok, data = await fc.fortimanager_request(ctx, conn, session, "get", "/pm/config/global/obj/firewall/address")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [FmgAddressObject(id=a.get("name", ""), title=a.get("name", ""), subnet=" ".join(str(x) for x in a.get("subnet", []))) for a in data]
-    return ActionResult(success=True, data=FmgAddressObjectList(title=f"{len(items)} address object(s)", items=items))
+    return ActionResult.success(FmgAddressObjectList(title=f"{len(items)} address object(s)", items=items), summary="Fmg address objects listed.")
 
 
 @chat.function(
@@ -157,8 +157,8 @@ async def create_fmg_address_object(ctx, params: CreateFmgAddressObjectParams) -
     body = {"name": params.name, "subnet": params.subnet.split()}
     ok, data = await fc.fortimanager_request(ctx, conn, session, "add", "/pm/config/global/obj/firewall/address", body)
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=FmgAddressObject(id=params.name, title=params.name, subnet=params.subnet))
+        return ActionResult.error(data.message())
+    return ActionResult.success(FmgAddressObject(id=params.name, title=params.name, subnet=params.subnet), summary="Fmg address object created.")
 
 
 @chat.function(
@@ -176,8 +176,8 @@ async def update_fmg_address_object(ctx, params: UpdateFmgAddressObjectParams) -
         body["subnet"] = params.subnet.split()
     ok, data = await fc.fortimanager_request(ctx, conn, session, "set", f"/pm/config/global/obj/firewall/address/{params.name}", body)
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=FmgAddressObject(id=params.name, title=params.name, subnet=params.subnet))
+        return ActionResult.error(data.message())
+    return ActionResult.success(FmgAddressObject(id=params.name, title=params.name, subnet=params.subnet), summary="Fmg address object updated.")
 
 
 @chat.function(
@@ -192,5 +192,5 @@ async def delete_fmg_address_object(ctx, params: DeleteFmgAddressObjectParams) -
     conn, session = auth
     ok, data = await fc.fortimanager_request(ctx, conn, session, "delete", f"/pm/config/global/obj/firewall/address/{params.name}")
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=DeleteResult(id=params.name, deleted=True))
+        return ActionResult.error(data.message())
+    return ActionResult.success(DeleteResult(id=params.name, deleted=True), summary="Fmg address object deleted.")

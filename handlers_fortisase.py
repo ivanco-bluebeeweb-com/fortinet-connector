@@ -32,9 +32,9 @@ async def list_endpoints(ctx, params: ListEndpointsParams) -> ActionResult:
         return conn
     ok, data = await fc.fortisase_request(ctx, conn, "GET", "/endpoints")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [Endpoint(id=str(e.get("id", "")), title=e.get("hostname", ""), user=e.get("user", ""), os=e.get("os", ""), status=e.get("status", "")) for e in data.get("results", data if isinstance(data, list) else [])]
-    return ActionResult(success=True, data=EndpointList(title=f"{len(items)} endpoint(s)", items=items))
+    return ActionResult.success(EndpointList(title=f"{len(items)} endpoint(s)", items=items), summary="Endpoints listed.")
 
 
 @chat.function(
@@ -49,9 +49,9 @@ async def list_sase_policies(ctx, params: ListSasePoliciesParams) -> ActionResul
         return conn
     ok, data = await fc.fortisase_request(ctx, conn, "GET", "/policies")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [SasePolicy(id=str(p.get("id", "")), title=p.get("name", ""), action=p.get("action", ""), status=p.get("status", "")) for p in data.get("results", data if isinstance(data, list) else [])]
-    return ActionResult(success=True, data=SasePolicyList(title=f"{len(items)} SASE polic{'y' if len(items)==1 else 'ies'}", items=items))
+    return ActionResult.success(SasePolicyList(title=f"{len(items)} SASE polic{'y' if len(items)==1 else 'ies'}", items=items), summary="Sase policies listed.")
 
 
 @chat.function(
@@ -65,8 +65,8 @@ async def create_sase_policy(ctx, params: CreateSasePolicyParams) -> ActionResul
         return conn
     ok, data = await fc.fortisase_request(ctx, conn, "POST", "/policies", json_body={"name": params.name, "action": params.action})
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=SasePolicy(id=str(data.get("id", "")), title=params.name, action=params.action, status="enable"))
+        return ActionResult.error(data.message())
+    return ActionResult.success(SasePolicy(id=str(data.get("id", "")), title=params.name, action=params.action, status="enable"), summary="Sase policy created.")
 
 
 @chat.function(
@@ -85,8 +85,8 @@ async def update_sase_policy(ctx, params: UpdateSasePolicyParams) -> ActionResul
         body["status"] = params.status
     ok, data = await fc.fortisase_request(ctx, conn, "PUT", f"/policies/{params.policy_id}", json_body=body)
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=SasePolicy(id=params.policy_id, title=data.get("name", ""), action=params.action, status=params.status))
+        return ActionResult.error(data.message())
+    return ActionResult.success(SasePolicy(id=params.policy_id, title=data.get("name", ""), action=params.action, status=params.status), summary="Sase policy updated.")
 
 
 @chat.function(
@@ -100,8 +100,8 @@ async def delete_sase_policy(ctx, params: DeleteSasePolicyParams) -> ActionResul
         return conn
     ok, data = await fc.fortisase_request(ctx, conn, "DELETE", f"/policies/{params.policy_id}")
     if not ok:
-        return ActionResult(success=False, error=data.message())
-    return ActionResult(success=True, data=DeleteResult(id=params.policy_id, deleted=True))
+        return ActionResult.error(data.message())
+    return ActionResult.success(DeleteResult(id=params.policy_id, deleted=True), summary="Sase policy deleted.")
 
 
 @chat.function(
@@ -116,9 +116,9 @@ async def list_sdwan_sites(ctx, params: ListSdwanSitesParams) -> ActionResult:
         return conn
     ok, data = await fc.fortisase_request(ctx, conn, "GET", "/sdwan/sites")
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [SdwanSite(id=str(s.get("id", "")), title=s.get("name", ""), status=s.get("status", "")) for s in data.get("results", data if isinstance(data, list) else [])]
-    return ActionResult(success=True, data=SdwanSiteList(title=f"{len(items)} SD-WAN site(s)", items=items))
+    return ActionResult.success(SdwanSiteList(title=f"{len(items)} SD-WAN site(s)", items=items), summary="Sdwan sites listed.")
 
 
 @chat.function(
@@ -133,9 +133,9 @@ async def list_security_events(ctx, params: ListSecurityEventsParams) -> ActionR
         return conn
     ok, data = await fc.fortisase_request(ctx, conn, "GET", "/events", params={"limit": params.limit})
     if not ok:
-        return ActionResult(success=False, error=data.message())
+        return ActionResult.error(data.message())
     items = [
         SecurityEvent(id=str(e.get("id", "")), title=e.get("name", e.get("type", "")), severity=e.get("severity", ""), detail=e.get("detail", ""), timestamp=e.get("timestamp", ""))
         for e in data.get("results", data if isinstance(data, list) else [])
     ]
-    return ActionResult(success=True, data=SecurityEventList(title=f"{len(items)} event(s)", items=items))
+    return ActionResult.success(SecurityEventList(title=f"{len(items)} event(s)", items=items), summary="Security events listed.")

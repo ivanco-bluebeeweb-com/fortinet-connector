@@ -31,7 +31,7 @@ async def bulk_firewall_policy_action(ctx, params: BulkFirewallPolicyActionParam
             items.append(BulkActionOutcome(id=pid, ok=True))
         else:
             items.append(BulkActionOutcome(id=pid, ok=False, error=data.message() if hasattr(data, "message") else str(data)))
-    return ActionResult(success=True, data=BulkActionResult(title="Bulk firewall policy status change", items=items))
+    return ActionResult.success(BulkActionResult(title="Bulk firewall policy status change", items=items), summary="Bulk firewall policy action done.")
 
 
 @chat.function(
@@ -69,4 +69,4 @@ async def audit_fortinet_estate(ctx, params: AuditFortinetEstateParams) -> Actio
                 findings.append(AuditFinding(id=f"vpn-down-{conn.get('id')}-{t.get('name')}", severity="warning", message=f"VPN tunnel '{t.get('name')}' on {conn.get('host', 'device')} is down."))
     if not findings:
         findings.append(AuditFinding(id="clean", severity="info", message="No issues found across the connected Fortinet estate."))
-    return ActionResult(success=True, data=AuditReport(title=f"Fortinet estate audit -- {len(findings)} finding(s)", findings=findings))
+    return ActionResult.success(AuditReport(title=f"Fortinet estate audit -- {len(findings)} finding(s)", findings=findings), summary="Fortinet estate audit ready.")
